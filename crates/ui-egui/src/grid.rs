@@ -498,8 +498,14 @@ pub fn show(app: &mut SheetApp, ui: &mut egui::Ui) {
         }
         Geo::new(sh, rect, scroll)
     };
-    // Scrolling.
-    let (scroll_delta, zoom_delta, modifiers, now) = ui.input(|i| (i.smooth_scroll_delta, i.zoom_delta(), i.modifiers, i.time));
+    // Scrolling. With Animation effects off a wheel notch scrolls and zooms whole: the scroll
+    // delta has been put right for the whole window already (`SheetApp::ui`), the zoom is ours.
+    let animate = app.animations_on();
+    let wheel = ui.ctx().options(|o| o.input_options);
+    let (scroll_delta, zoom_delta, modifiers, now) = ui.input(|i| {
+        let zoom = if animate { i.zoom_delta() } else { crate::motion::unsmoothed_zoom(i, &wheel) };
+        (i.smooth_scroll_delta, zoom, i.modifiers, i.time)
+    });
     if (resp.hovered() || resp.contains_pointer()) && !crate::text_box::contains_pointer(app, ui.ctx()) {
         if zoom_delta != 1.0 {
             let z = (sh.zoom as f32 * zoom_delta).clamp(10.0, 400.0).round();
@@ -565,8 +571,9 @@ pub fn show(app: &mut SheetApp, ui: &mut egui::Ui) {
         *v = view;
     }
     app.grid.cells_rect = Some(geo.mirror_rect(geo.cells));
-    // The selection outline glides to a new selection. It stays on its cells when Animations is
-    // off, when egui's animations are (the headless harness), and while a screenshot is on its way.
+    // The selection outline glides to a new selection. It stays on its cells when Animation
+    // effects are off, when egui's animations are (the headless harness), and while a screenshot
+    // is on its way.
     let outline = app.grid.glide.frame(crate::selection_glide::Frame {
         place,
         range: sel.current(),
@@ -574,7 +581,7 @@ pub fn show(app: &mut SheetApp, ui: &mut egui::Ui) {
         view: geo.cells,
         now,
         frame_nr: ui.ctx().cumulative_frame_nr(),
-        animate: app.ui.animations && ui.ctx().global_style().animation_time > 0.0 && !app.shots.in_flight(),
+        animate: animate && ui.ctx().global_style().animation_time > 0.0 && !app.shots.in_flight(),
     });
     if app.grid.glide.is_gliding() {
         ui.ctx().request_repaint();
@@ -626,10 +633,13 @@ pub fn show(app: &mut SheetApp, ui: &mut egui::Ui) {
     context_menu(app, ui);
     let track_x = if rtl { (available.left(), rect.left()) } else { (rect.right(), available.right()) };
     vertical_scrollbar(app, ui, sh, &geo, track_x, max_y, &t);
-    if app.session.clipboard.is_some() {
+    if app.session.clipboard.is_some() && animate {
         // By the clock, not per frame: a gliding outline repaints more often than the ants step.
         app.grid.marching_phase = crate::selection_glide::ants_phase(now);
         ui.ctx().request_repaint_after(std::time::Duration::from_millis(60));
+    } else {
+        // Animation effects off: the dashes round a copied range stand still.
+        app.grid.marching_phase = 0.0;
     }
 }
 
