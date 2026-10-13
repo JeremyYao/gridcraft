@@ -197,25 +197,33 @@ fn off_scrolls_a_wheel_notch_at_once_and_on_eases_it_in() {
 }
 
 #[test]
-fn off_zooms_a_ctrl_wheel_notch_at_once_and_on_eases_it_in() {
+fn off_steps_a_ctrl_wheel_notch_at_once_and_on_glides_there() {
+    // A notch goes to the next step of the zoom ladder: 100% → 120% (`wheel_zoom.rs`).
     let system = System::default();
     let mut eased = harness(&system, true);
     assert_eq!(zoom(&eased), 100);
     wheel(&mut eased, 1.0, Modifiers::COMMAND);
     let first = zoom(&eased);
     steps(&mut eased, 90);
-    assert!(first > 100 && first < zoom(&eased), "on: the zoom arrives over several frames ({first}, then {})", zoom(&eased));
+    assert!(first < 120, "on: the notch eases in and the zoom glides, so it isn't there in the frame the wheel turned ({first})");
+    assert_eq!(zoom(&eased), 120);
 
     let mut h = harness(&system, true);
     set(&mut h, Animations::Off);
     wheel(&mut h, 1.0, Modifiers::COMMAND);
-    // One notch is e^(40 points / 200) = 1.2214 times.
-    assert_eq!(zoom(&h), 122, "off: the whole notch in the frame the wheel turned");
+    assert_eq!(zoom(&h), 120, "off: on the step in the frame the wheel turned");
     steps(&mut h, 30);
-    assert_eq!(zoom(&h), 122, "and nothing trails in afterwards");
+    assert_eq!(zoom(&h), 120, "and nothing trails in afterwards");
     assert_eq!(scroll_y(&h), 0.0, "Ctrl+wheel zooms; it doesn't scroll");
     wheel(&mut h, -1.0, Modifiers::COMMAND);
     assert_eq!(zoom(&h), 100, "a notch back undoes it");
+    // The same when it is the system that has animations off: two notches, two steps, at once.
+    set(&mut h, Animations::System);
+    system.set(Some(false));
+    wheel(&mut h, 2.0, Modifiers::COMMAND);
+    assert_eq!(zoom(&h), 140);
+    steps(&mut h, 30);
+    assert_eq!(zoom(&h), 140);
 }
 
 #[test]
