@@ -3,15 +3,17 @@
 //! What moves in the window:
 //! - a wheel notch scrolls the sheet eased over a few frames, and Ctrl/⌘+wheel zooms it the same
 //!   way (egui's smoothing, which has no switch of its own);
+//! - the formula bar eases to a new height ([`crate::formula_bar`]);
 //! - the selection outline glides to a new selection ([`crate::selection_glide`]);
 //! - the dashes round a copied range march;
 //! - egui's own motion: menus, tooltips and dialogs fading in, scroll areas gliding to a target.
 //!
-//! [`Animations::Off`] turns all of it off: a notch scrolls and zooms at once, the outline is on
-//! its cells, the dashes stand still. [`Animations::System`], the default, follows the system's
-//! own setting, which the host reports through [`crate::Services::animations_enabled`]
-//! (Windows: Animation effects; macOS: Reduce motion; Linux and the BSDs: the desktop's animations
-//! setting; the web: `prefers-reduced-motion`). Where the system says nothing, animations stay on.
+//! [`Animations::Off`] turns all of it off: a notch scrolls and zooms at once, the formula bar
+//! changes height at once, the outline is on its cells, the dashes stand still.
+//! [`Animations::System`], the default, follows the system's own setting, which the host reports
+//! through [`crate::Services::animations_enabled`] (Windows: Animation effects; macOS: Reduce
+//! motion; Linux and the BSDs: the desktop's animations setting; the web:
+//! `prefers-reduced-motion`). Where the system says nothing, animations stay on.
 
 use egui::{Event, InputOptions, InputState, MouseWheelUnit, TouchPhase, Vec2, style::ScrollAnimation};
 use serde::{Deserialize, Serialize};

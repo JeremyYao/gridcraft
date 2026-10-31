@@ -108,9 +108,9 @@ The saved choice remains System; new users still start in Light. The legacy
 
 `{command: "view.animations", params: {mode: "off"}}` sets Animation effects (File ▸ Options);
 `mode` accepts `"system"`, `"on"`, or `"off"`. Off stops the motion in the window: a wheel notch
-scrolls and zooms at once instead of easing in, the selection outline jumps to a new selection
-instead of gliding there, the dashes round a copied range stand still, and menus and tooltips
-appear without fading. System, the default, follows the system's own setting while the app runs
+scrolls and zooms at once instead of easing in, the formula bar changes height at once, the
+selection outline jumps to a new selection instead of gliding there, the dashes round a copied
+range stand still, and menus and tooltips appear without fading. System, the default, follows the system's own setting while the app runs
 (Windows: Settings ▸ Accessibility ▸ Visual effects ▸ Animation effects; macOS: Reduce motion;
 Linux and the BSDs: the desktop's animations setting, from the settings portal or, without one,
 KDE's `kdeglobals` and GTK's `settings.ini`; the web: `prefers-reduced-motion`) and animates where

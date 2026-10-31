@@ -9,6 +9,7 @@ use std::rc::Rc;
 use egui::{Event, Modifiers, MouseWheelSource, MouseWheelUnit, TouchPhase, vec2};
 use egui_kittest::kittest::{NodeT as _, Queryable as _};
 use gridcraft_engine::Session;
+use gridcraft_ui_egui::formula_bar::BarLayout;
 use gridcraft_ui_egui::motion::Animations;
 use gridcraft_ui_egui::{Services, SheetApp, UiState};
 use serde_json::json;
@@ -223,6 +224,36 @@ fn off_steps_a_ctrl_wheel_notch_at_once_and_on_glides_there() {
     assert_eq!(zoom(&h), 140);
     steps(&mut h, 30);
     assert_eq!(zoom(&h), 140);
+}
+
+/// Pins the formula bar open or closed and gives its height after one frame, then after it has
+/// had time to settle.
+fn bar_height_after_toggling(h: &mut Harness, expanded: bool) -> (f32, f32) {
+    h.state_mut().ui.formula_bar_expanded = expanded;
+    h.step();
+    let first_frame = BarLayout::get(&h.ctx).height;
+    steps(h, 20);
+    (first_frame, BarLayout::get(&h.ctx).height)
+}
+
+#[test]
+fn off_changes_the_formula_bar_height_at_once_and_on_eases_it() {
+    let system = System::default();
+    let mut h = harness(&system, true);
+    let (first_frame, open) = bar_height_after_toggling(&mut h, true);
+    assert!(first_frame < open, "on: the bar eases open ({first_frame} of {open})");
+    let (first_frame, closed) = bar_height_after_toggling(&mut h, false);
+    assert!(first_frame > closed, "on: and eases closed ({first_frame} down to {closed})");
+
+    set(&mut h, Animations::Off);
+    assert_eq!(bar_height_after_toggling(&mut h, true), (open, open), "off: open in one frame");
+    assert_eq!(bar_height_after_toggling(&mut h, false), (closed, closed), "off: closed in one frame");
+
+    // The same when it is the system that has animations off.
+    set(&mut h, Animations::System);
+    system.set(Some(false));
+    h.step();
+    assert_eq!(bar_height_after_toggling(&mut h, true), (open, open));
 }
 
 #[test]
